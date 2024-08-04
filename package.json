@@ -1,6 +1,6 @@
 {
   "name": "glitch-guardian",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "A github app that handles administrative tasks for github projects, issues and PRs",
   "author": "Petrik van der Velde",
