@@ -131,3 +131,5 @@ dist
 
 # ignore the lib folder where Typescript gets compiled to
 lib/
+.env.production
+.env.test
