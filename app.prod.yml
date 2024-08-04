@@ -124,14 +124,14 @@ default_permissions:
   # https://developer.github.com/v3/apps/permissions/
   # organization_administration: read
 # The name of the GitHub App. Defaults to the name specified in package.json
-# name: My Probot App
+name: glitch-guardian-app
 
 # The homepage of your GitHub App.
-# url: https://example.com/
+url: https://github.com/pvandervelde/glitch-guardian/
 
 # A description of the GitHub App.
-# description: A description of my awesome app
+description: "The github app that handles administrative tasks for github repos, projects, issues and PRs"
 
 # Set to true when your GitHub App is available to the public or false when it is only accessible to the owner of the app.
 # Default: true
-# public: false
+public: false
