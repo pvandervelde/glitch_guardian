@@ -4,17 +4,23 @@
   "private": true,
   "description": "A github app that handles administrative tasks for github projects, issues and PRs",
   "author": "Petrik van der Velde",
-  "license": "ISC",
-  "homepage": "https://github.com//",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/pvandervelde/glitch_guardian/",
   "keywords": [
     "probot",
     "github",
     "probot-app"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "rimraf lib && tsc -p tsconfig.json",
+    "doc": "typedoc --options .typedoc.json --plugin .typedoc/typedoc_ga.mjs",
+    "lint:fix": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"docs/*.md\" *.md tsconfig.json package.json --end-of-line auto",
+    "lint": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"docs/*.md\" *.md tsconfig.json package.json --end-of-line auto",
+    "pretest": "npm run build && tsc --noEmit -p test",
     "start": "probot run ./lib/index.js",
-    "test": "vitest"
+    "test:coverage": "vitest run --coverage",
+    "test:dev": "vitest --ui --coverage",
+    "test": "vitest run"
   },
   "dependencies": {
     "probot": "^13.0.1"
