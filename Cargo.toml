@@ -1,0 +1,19 @@
+[package]
+authors = ["Patrick van der Velde"]
+description = "A github bot that handles the administrative tasks for different repostiories."
+edition = "2021"
+name = "glitch_guardian"
+repository = "https://github.com/pvandervelde/glitch_guardian"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+#
+# Dependencies
+#
+
+[dependencies]
+octocrab = "0.39.0"
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = "1.0.122"
+tokio = { version = "1.39.2", features = ["full"] }
