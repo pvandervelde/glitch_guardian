@@ -1,0 +1,68 @@
+name: Deploy to Azure Functions
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # Fetch all history for all tags and branches
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Build
+      run: cargo build --release
+
+    - name: XTask
+      run: cargo xtask
+
+    - name: Install git-semver
+      run: |
+        cargo install git-semver
+
+    - name: Calculate version
+      id: semver
+      run: |
+        VERSION=$(git semver)
+        echo "Calculated version: $VERSION"
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+
+    - name: Terraform Init
+      run: terraform init
+      env:
+        ARM_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+
+    - name: Terraform Apply
+      run: |
+        terraform apply -auto-approve \
+          -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
+          -var="project_id=${{ secrets.PROJECT_ID }}" \
+          -var="git_sha=${{ github.sha }}" \
+          -var="version=${{ env.VERSION }}" \
+          -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
+          -var="github_webhook_secret=${{ secrets.GITHUB_WEBHOOK_SECRET }}"
+      env:
+        ARM_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+
+    - name: Deploy to Azure Functions
+      uses: Azure/functions-action@v1
+      with:
+        app-name: glitch_guardian
+        package: ${{ github.workspace }}/target/func
+      env:
+        AZURE_FUNCTIONAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
