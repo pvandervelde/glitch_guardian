@@ -16,7 +16,6 @@ use std::{
     collections::HashMap,
     env,
     fs::{self, File},
-    os::windows::fs::MetadataExt,
     path::PathBuf,
 };
 
@@ -36,7 +35,7 @@ fn copy_file(from: &PathBuf, to: &PathBuf) -> Result<()> {
 
     let file_size = fs::metadata(from.clone())
         .with_context(|| format!("Failed to get the file size of {}", from.to_str().unwrap()))?
-        .file_size();
+        .len();
     let bytes_copied = fs::copy(from, to)?;
 
     if file_size != bytes_copied {
