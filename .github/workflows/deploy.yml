@@ -35,34 +35,39 @@ jobs:
         echo "Calculated version: $VERSION"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+    - name: Azure Login
+      uses: azure/login@6c251865b4e6290e7b78be643ea2d005bc51f69a # v2
+      with:
+        client-id: ${{ secrets.AZURE_AD_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_AD_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v1
 
     - name: Terraform Init
       run: terraform init
       env:
-        ARM_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
-        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
     - name: Terraform Apply
       run: |
         terraform apply -auto-approve \
           -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
-          -var="project_id=${{ secrets.PROJECT_ID }}" \
+          -var="project_id=${{ secrets.GH_PROJECT_ID }}" \
           -var="git_sha=${{ github.sha }}" \
           -var="version=${{ env.VERSION }}" \
-          -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
-          -var="github_webhook_secret=${{ secrets.GITHUB_WEBHOOK_SECRET }}"
+          -var="github_webhook_secret=${{ secrets.GH_WEBHOOK_SECRET }}"
       env:
-        ARM_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
-        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
+    # Don't use the publish profile for custom handlers
     - name: Deploy to Azure Functions
       uses: Azure/functions-action@v1
       with:
         app-name: glitch_guardian
         package: ${{ github.workspace }}/target/func
-      env:
-        AZURE_FUNCTIONAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
