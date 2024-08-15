@@ -99,8 +99,10 @@ data "http" "github_meta" {
     url = "https://api.github.com/meta"
 }
 
+data "azurerm_client_config" "current" {}
+
 locals {
-    github_hook_ips = jsondecode(data.http.github_meta.body).hooks
+    github_hook_ips = jsondecode(data.http.github_meta.response_body).hooks
 }
 
 #
@@ -201,16 +203,12 @@ resource "azurerm_key_vault_secret" "github_webhook_secret" {
 # Function app
 #
 
-resource "azurerm_app_service_plan" "asp" {
+resource "azurerm_service_plan" "asp" {
   name                = "${local.name_prefix}-tf-${var.category}-asp"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  kind                = "FunctionApp"
-
-  sku {
-    tier = "Dynamic"
-    size = "Y1"
-  }
+  os_type             = "Linux"
+  sku_name            = "Y1"
 
   tags = merge(
     local.common_tags,
@@ -222,7 +220,7 @@ resource "azurerm_function_app" "fa" {
   name                       = "${local.name_prefix}-tf-${var.category}-function"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
-  app_service_plan_id        = azurerm_app_service_plan.asp.id
+  app_service_plan_id        = azurerm_service_plan.asp.id
   storage_account_name       = azurerm_storage_account.sa.name
   storage_account_access_key = azurerm_storage_account.sa.primary_access_key
   os_type                    = "linux"
