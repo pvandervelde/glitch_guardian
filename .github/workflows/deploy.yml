@@ -24,16 +24,16 @@ jobs:
     - name: XTask
       run: cargo xtask
 
-    - name: Install git-semver
-      run: |
-        cargo install git-semver
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v3.0.0
+      with:
+        versionSpec: '6.0.0'
 
-    - name: Calculate version
-      id: semver
-      run: |
-        VERSION=$(git semver)
-        echo "Calculated version: $VERSION"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
+    - name: Determine Version
+      id: version_step # step id used as reference for output values
+      uses: gittools/actions/gitversion/execute@v3.0.0
+      with:
+        useConfigFile: true
 
     - name: Azure Login
       uses: azure/login@6c251865b4e6290e7b78be643ea2d005bc51f69a # v2
@@ -58,7 +58,7 @@ jobs:
           -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
           -var="project_id=${{ secrets.GH_PROJECT_ID }}" \
           -var="git_sha=${{ github.sha }}" \
-          -var="version=${{ env.VERSION }}" \
+          -var="version=${{ env.fullSemVer }}" \
           -var="github_webhook_secret=${{ secrets.GH_WEBHOOK_SECRET }}"
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}

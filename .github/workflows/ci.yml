@@ -37,17 +37,18 @@ jobs:
     name: Terraform Test
     runs-on: ubuntu-latest
     steps:
-    - name: Install git-semver
-      run: |
-        cargo install git-semver
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # Fetch all history for all tags and branches
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v3.0.0
+      with:
+        versionSpec: '6.0.0'
 
-    - name: Calculate version
-      id: semver
-      run: |
-        VERSION=$(git semver)
-        echo "Calculated version: $VERSION"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+    - name: Determine Version
+      uses: gittools/actions/gitversion/execute@v3.0.0
+      with:
+        useConfigFile: true
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@ed3a0531877aca392eb870f440d9ae7aba83a6bd # v1
@@ -68,7 +69,7 @@ jobs:
           -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
           -var="project_id=${{ secrets.GH_PROJECT_ID }}" \
           -var="git_sha=${{ github.sha }}" \
-          -var="version=${{ env.VERSION }}" \
+          -var="version=${{ env.fullSemVer }}" \
           -var="github_webhook_secret=${{ secrets.GH_WEBHOOK_SECRET }}"
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
