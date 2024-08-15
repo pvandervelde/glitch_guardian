@@ -8,7 +8,6 @@ on:
 # Sets permissions of the GITHUB_TOKEN to allow deployment to Azure
 permissions:
   contents: read
-  pages: write
   id-token: write
 
 jobs:
@@ -58,6 +57,8 @@ jobs:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        ARM_USE_AZUREAD: true
+        ARM_USER_OIDC: true
 
     - name: Terraform Apply
       working-directory: env
@@ -72,6 +73,8 @@ jobs:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        ARM_USE_AZUREAD: true
+        ARM_USER_OIDC: true
 
     # Don't use the publish profile for custom handlers
     - name: Deploy to Azure Functions
