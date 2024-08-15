@@ -266,7 +266,7 @@ resource "azurerm_linux_function_app" "fa" {
 resource "azurerm_key_vault_access_policy" "function_app" {
     key_vault_id = azurerm_key_vault.kv.id
     tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = azurerm_function_app.fa.identity[0].principal_id
+    object_id = azurerm_linux_function_app.fa.identity[0].principal_id
 
     secret_permissions = [
         "Get",
