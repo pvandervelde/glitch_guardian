@@ -110,11 +110,17 @@ confidence-threshold = 0.93
 
 # # Allow 1 or more licenses on a per-crate basis, so that particular licenses
 # # aren't accepted for every possible crate as with the normal allow list
-# exceptions = [
-#     # Each entry is the crate and version constraint, and its specific allow
-#     # list
-#     { allow = ["Unicode-DFS-2016"], crate = "unicode-ident" },
-# ]
+exceptions = [
+    { name = "ring", allow = [
+        "OpenSSL",
+    ] },
+    { name = "unicode-ident", allow = [
+        "Unicode-DFS-2016",
+    ] },
+    { name = "rustls-webpki", allow = [
+        "BSD-3-Clause",
+    ] },
+]
 
 # Some crates don't have (easily) machine readable licensing information,
 # adding a clarification entry for it allows you to manually specify the
@@ -132,6 +138,14 @@ expression = "MIT AND ISC AND OpenSSL"
 license-files = [
     # Each entry is a crate relative path, and the (opaque) hash of its contents
     { path = "LICENSE", hash = 0xbd0eed23 },
+]
+
+[[licenses.clarify]]
+name = "rustls-webpki"
+expression = "ISC AND BSD-3-Clause"
+license-files = [
+    { path = "LICENSE", hash = 0x001c7e6c },
+    { path = "third-party/chromium/LICENSE", hash = 0x001c7e6c },
 ]
 
 [licenses.private]
