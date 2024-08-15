@@ -159,7 +159,7 @@ resource "azurerm_key_vault" "kv" {
 
     access_policy {
         tenant_id = data.azurerm_client_config.current.tenant_id
-        object_id = data.azurerm_client_config.current.object.id
+        object_id = data.azurerm_client_config.current.object_id
 
         key_permissions = [
             "Get",
@@ -216,15 +216,14 @@ resource "azurerm_service_plan" "asp" {
     var.tags)
 }
 
-resource "azurerm_function_app" "fa" {
+resource "azurerm_linux_function_app" "fa" {
   name                       = "${local.name_prefix}-tf-${var.category}-function"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
-  app_service_plan_id        = azurerm_service_plan.asp.id
+
+  service_plan_id            = azurerm_service_plan.asp.id
   storage_account_name       = azurerm_storage_account.sa.name
   storage_account_access_key = azurerm_storage_account.sa.primary_access_key
-  os_type                    = "linux"
-  version                    = "~3"
 
   identity {
     type = "SystemAssigned"
@@ -237,22 +236,26 @@ resource "azurerm_function_app" "fa" {
   }
 
   site_config {
-    ip_restriction = concat([
-        for ip in local.github_hook_ips : {
-            ip_address = ip
-            action     = "Allow"
-            priority = 100
-            name = "Allow Github"
-        }
-    ], [
-        {
-            ip_address = "0.0.0.0/0"
-            action     = "Deny"
-            priority = 200
-            name = "Deny All"
-        }
-    ])
+
   }
+
+  # site_config {
+  #   ip_restriction = concat([
+  #       for ip in local.github_hook_ips : {
+  #           ip_address = ip
+  #           action     = "Allow"
+  #           priority = 100
+  #           name = "Allow Github"
+  #       }
+  #   ], [
+  #       {
+  #           ip_address = "0.0.0.0/0"
+  #           action     = "Deny"
+  #           priority = 200
+  #           name = "Deny All"
+  #       }
+  #   ])
+  # }
 
   tags = merge(
     local.common_tags,
