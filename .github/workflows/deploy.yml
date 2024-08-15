@@ -5,6 +5,12 @@ on:
   push:
     branches: [ "master" ]
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to Azure
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
