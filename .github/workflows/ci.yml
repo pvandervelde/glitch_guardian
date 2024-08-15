@@ -67,9 +67,11 @@ jobs:
         subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
     - name: Terraform Init
+      working-directory: env
       run: terraform init
 
     - name: Terraform Plan
+      working-directory: env
       run: |
         terraform plan -no-color \
           -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
