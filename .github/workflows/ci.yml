@@ -38,9 +38,11 @@ jobs:
           files: codecov.json
           fail_ci_if_error: true
 
+  # Can only run this in PRs because the Azure OIDC is linked to PRs and building on the 'master' branch
   tf-test:
     name: Terraform Test
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
     steps:
     - uses: actions/checkout@v2
       with:
@@ -79,9 +81,9 @@ jobs:
       run: |
         terraform plan -no-color \
           -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
-          -var="project_id=${{ secrets.GH_PROJECT_ID }}" \
-          -var="git_sha=${{ github.sha }}" \
-          -var="version=${{ env.fullSemVer }}" \
+          -var="github_project_id=${{ secrets.GH_PROJECT_ID }}" \
+          -var="meta_git_sha=${{ github.sha }}" \
+          -var="meta_version=${{ env.fullSemVer }}" \
           -var="github_webhook_secret=${{ secrets.GH_WEBHOOK_SECRET }}"
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
