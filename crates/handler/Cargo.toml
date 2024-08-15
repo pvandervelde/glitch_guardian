@@ -2,6 +2,7 @@
 authors.workspace = true
 description = "A github bot that handles the administrative tasks for different repositories."
 edition = "2021"
+license-file.workspace = true
 name = "handler"
 repository.workspace = true
 version.workspace = true

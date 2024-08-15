@@ -6,3 +6,4 @@ members = ["crates/*", "lib/*"]
 authors = ["Patrick van der Velde"]
 repository = "https://github.com/pvandervelde/glitch_guardian"
 version = "0.1.0"
+license-file = "LICENSE"
