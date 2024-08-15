@@ -147,7 +147,7 @@ resource "azurerm_storage_account" "sa" {
 #
 
 resource "azurerm_key_vault" "kv" {
-    name = "${local.name_prefix_tf}-tf-${var.category}-kv"
+    name = "${local.environment_short}${local.location_short}${var.category}"
     location = azurerm_resource_group.rg.location
     resource_group_name = azurerm_resource_group.rg.name
     enabled_for_disk_encryption = true
