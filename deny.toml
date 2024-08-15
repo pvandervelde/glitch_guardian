@@ -101,12 +101,6 @@ allow = [
     "MIT",
     "MPL-2.0",
 ]
-skip = [
-    # ring has a rather complicated LICENSE file due to reasons spelled out
-    # in said LICENSE file, but is basically OpenSSL for older parts, and ISC
-    # for newer parts
-    { name = "ring", licenses = [] },
-]
 
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
