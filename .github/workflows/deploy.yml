@@ -78,5 +78,5 @@ jobs:
     - name: Deploy to Azure Functions
       uses: Azure/functions-action@v1
       with:
-        app-name: glitch_guardian
+        app-name: p-aue-tf-glitchg-function
         package: ${{ github.workspace }}/target/func
