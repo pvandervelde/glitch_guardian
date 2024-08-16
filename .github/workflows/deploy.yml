@@ -52,6 +52,12 @@ jobs:
     - name: XTask
       run: cargo xtask
 
+    - name: show directories
+      run: |
+          ls -la
+          ls -la target
+          ls -la target/func
+
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v1
 

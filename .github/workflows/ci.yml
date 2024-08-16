@@ -104,10 +104,13 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Install function build chain
+        run: rustup target add x86_64-unknown-linux-musl
+
       - name: Build
         run: cargo build --release --package handler --target x86_64-unknown-linux-musl --target-dir target/release
 
-      - name: show directories
+      - name: show output directories
         run: |
           ls -la
           ls -la target
@@ -118,3 +121,9 @@ jobs:
 
       - name: XTask
         run: cargo xtask
+
+      - name: show directories
+        run: |
+          ls -la
+          ls -la target
+          ls -la target/func
