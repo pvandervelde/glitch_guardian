@@ -3,7 +3,12 @@ name: Deploy to Azure Functions
 on:
   workflow_dispatch:
   push:
-    branches: [ "master" ]
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '!*-rc[0-9]+'
+#  release:
+#    types:
+#      - published
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to Azure
 permissions:
