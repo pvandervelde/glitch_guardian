@@ -1,0 +1,12 @@
+[package]
+authors.workspace = true
+edition = "2021"
+license-file.workspace = true
+name = "xtask"
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+anyhow = "1.0.86"
+handlebars = "6.0.0"
+tempfile = "3.12.0"

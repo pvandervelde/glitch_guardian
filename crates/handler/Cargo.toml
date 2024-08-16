@@ -1,0 +1,33 @@
+[package]
+authors.workspace = true
+description = "A github bot that handles the administrative tasks for different repositories."
+edition = "2021"
+license-file.workspace = true
+name = "handler"
+repository.workspace = true
+version.workspace = true
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+#
+# Dependencies
+#
+
+[dependencies]
+azure_identity = "0.20.0"
+azure_security_keyvault = "0.20.0"
+hex = "0.4.3"
+octocrab = "0.39.0"
+ring = "0.17.8"
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = "1.0.122"
+tokio = { version = "1.39.2", features = ["full"] }
+warp = "0.3.7"
+
+[dev-dependencies]
+mockito = "1.5.0"
+
+# The build target for the azure functions binary
+#[target.x86_64-unknown-linux-musl]
+#linker = "rust-lld"
