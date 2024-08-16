@@ -19,6 +19,10 @@ use std::{
     path::PathBuf,
 };
 
+#[cfg(test)]
+#[path = "main_tests.rs"]
+mod main_tests;
+
 fn copy_file(from: &PathBuf, to: &PathBuf) -> Result<()> {
     let target_dir = to.parent().ok_or_else(|| {
         anyhow!(
@@ -92,7 +96,7 @@ fn create_host_file(workspace_dir: &str, target_dir: &str, handler_file_name: &s
 
 /// Get the path to the workspace root.
 ///
-/// Assumed this xtask is located in `[WORKSPACE]/lib/xtask-package`.
+/// Assumed this xtask is located in `[WORKSPACE]/lib/xtask`.
 fn path_to_workspace_root() -> Result<PathBuf> {
     let pkg_root = std::env!("CARGO_MANIFEST_DIR");
     let pkg_path = PathBuf::from(pkg_root);
