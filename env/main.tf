@@ -200,6 +200,23 @@ resource "azurerm_key_vault_secret" "github_webhook_secret" {
 }
 
 #
+# App Insights
+#
+
+resource "azurerm_application_insights" "appinsights" {
+  name                = "${local.name_prefix}-tf-${var.category}-insights"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  application_type    = "web"
+
+  tags = merge(
+    local.common_tags,
+    local.extra_tags,
+    var.tags
+  )
+}
+
+#
 # Function app
 #
 
@@ -233,10 +250,13 @@ resource "azurerm_linux_function_app" "fa" {
     "FUNCTIONS_WORKER_RUNTIME" = "custom"
     "GITHUB_TOKEN"             = var.github_token
     PROJECT_ID                 = var.github_project_id
+    "APPINSIGHTS_INSTRUMENTATIONKEY"  = azurerm_application_insights.appinsights.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.appinsights.connection_string
   }
 
   site_config {
-
+    application_insights_connection_string = azurerm_application_insights.appinsights.connection_string
+    application_insights_key               = azurerm_application_insights.appinsights.instrumentation_key
   }
 
   # site_config {

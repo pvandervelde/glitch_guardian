@@ -90,3 +90,43 @@ jobs:
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         ARM_USE_OIDC: true
+
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history for all tags and branches
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install cargo binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install cross
+        run: cargo binstall cross --no-confirm --no-track
+
+      - name: Build handler
+        run: cross build --release --package handler --target x86_64-unknown-linux-musl
+
+      - name: show output directories
+        run: |
+          ls -la
+          ls -la target
+          ls -la target/release
+
+      - name: Build xtask
+        run: cargo build --release --package xtask
+
+      - name: XTask
+        run: cargo xtask
+
+      - name: show directories
+        run: |
+          ls -la
+          ls -la target
+          ls -la target/func
