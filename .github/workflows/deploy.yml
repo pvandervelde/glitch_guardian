@@ -3,12 +3,13 @@ name: Deploy to Azure Functions
 on:
   workflow_dispatch:
   push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - '!*-rc[0-9]+'
-#  release:
-#    types:
-#      - published
+#    # Only run the deploy when we do a tag push
+#    tags:
+#      - '[0-9]+.[0-9]+.[0-9]+'
+#      - '!*-rc[0-9]+'
+  release:
+    types:
+      - published
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to Azure
 permissions:
@@ -19,6 +20,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # Fetch all history for all tags and branches
+
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v3.0.0
       with:
@@ -30,28 +35,27 @@ jobs:
       with:
         useConfigFile: true
 
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0  # Fetch all history for all tags and branches
-
     - name: Set up Rust
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
 
-    - name: Install function build chain
-      run: rustup target add x86_64-unknown-linux-musl
+    - name: Install cargo binstall
+      uses: cargo-bins/cargo-binstall@main
 
-    - name: Build
-      run: cargo build --release --package handler --target x86_64-unknown-linux-musl --target-dir target/release
+    - name: Install cross
+      run: cargo binstall cross --no-confirm --no-track
 
-    - name: show directories
+    - name: Build handler
+      run: cross build --release --package handler --target x86_64-unknown-linux-musl
+
+    - name: show output directories
       run: |
         ls -la
         ls -la target
         ls -la target/release
 
-    - name: Build
+    - name: Build xtask
       run: cargo build --release --package xtask
 
     - name: XTask
@@ -59,9 +63,9 @@ jobs:
 
     - name: show directories
       run: |
-          ls -la
-          ls -la target
-          ls -la target/func
+        ls -la
+        ls -la target
+        ls -la target/func
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v1
