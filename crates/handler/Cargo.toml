@@ -25,6 +25,11 @@ serde_json = "1.0.122"
 tokio = { version = "1.39.2", features = ["full"] }
 warp = "0.3.7"
 
+# See https://github.com/sfackler/rust-openssl/issues/1627
+# and https://docs.rs/openssl/latest/openssl/#vendored
+[target.x86_64-unknown-linux-musl.dependencies]
+openssl = { version = "0.10.62", features = ["vendored"] }
+
 [dev-dependencies]
 mockito = "1.5.0"
 

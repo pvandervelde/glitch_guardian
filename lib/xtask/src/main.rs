@@ -144,6 +144,24 @@ fn main() -> anyhow::Result<()> {
         _ => "handler",
     };
 
+    let handler_src = match env::consts::OS {
+        "linux" => [
+            workspace_root_str,
+            "target",
+            "x86_64-unknown-linux-musl",
+            "release",
+            handler_name,
+        ]
+        .iter()
+        .collect(),
+        "windows" => [workspace_root_str, "target", "release", handler_name]
+            .iter()
+            .collect(),
+        _ => [workspace_root_str, "target", "release", handler_name]
+            .iter()
+            .collect(),
+    };
+
     // function.json
     let function_json_src: PathBuf = [
         workspace_root_str,
@@ -165,9 +183,6 @@ fn main() -> anyhow::Result<()> {
     let local_setting_json_target = [target_path_str, "local.settings.json"].iter().collect();
     copy_file(&local_setting_json_src, &local_setting_json_target)?;
 
-    let handler_src = [workspace_root_str, "target", "release", handler_name]
-        .iter()
-        .collect();
     let handler_target = [target_path_str, handler_name].iter().collect();
     copy_file(&handler_src, &handler_target)?;
 
