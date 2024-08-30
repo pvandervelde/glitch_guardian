@@ -1,4 +1,6 @@
+mod api;
 use anyhow::Error;
+use api::{issues::Issue, projects::add_to_project, prs::PullRequest};
 use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
@@ -37,42 +39,6 @@ struct WebhookPayload {
     action: String,
     issue: Option<Issue>,
     pull_request: Option<PullRequest>,
-}
-
-#[derive(Deserialize)]
-struct Issue {
-    node_id: String,
-}
-
-#[derive(Deserialize)]
-struct PullRequest {
-    node_id: String,
-}
-
-async fn add_to_project(
-    octocrab: &Octocrab,
-    project_id: &str,
-    item_id: String,
-) -> Result<(), StatusCode> {
-    let query = format!(
-        r#"
-        mutation {{
-            addProjectV2ItemById(input: {{projectId: "{}", contentId: "{}"}}) {{
-                item {{
-                    id
-                }}
-            }}
-        }}
-        "#,
-        project_id, item_id
-    );
-
-    octocrab
-        .graphql(&query)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(())
 }
 
 async fn create_github_app_client(app_id: u64, private_key: &str) -> Result<Octocrab, Error> {
