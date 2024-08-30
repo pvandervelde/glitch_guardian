@@ -1,4 +1,10 @@
 mod api;
+mod telemetry;
+
+#[cfg(test)]
+#[path = "main_tests.rs"]
+mod main_tests;
+
 use anyhow::Error;
 use api::{issues::Issue, projects::add_to_project, prs::PullRequest};
 use axum::{
@@ -10,15 +16,12 @@ use axum::{
 use azure_security_keyvault::KeyvaultClient;
 use dotenv::dotenv;
 use hmac::{Hmac, Mac};
-use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+use jsonwebtoken::EncodingKey;
 use octocrab::{models::AppId, Octocrab};
 use serde::Deserialize;
 use sha2::Sha256;
 use std::{env, sync::Arc};
-
-#[cfg(test)]
-#[path = "main_tests.rs"]
-mod main_tests;
+use tracing::info;
 
 struct AppConfig {
     app_id: u64,
@@ -137,6 +140,16 @@ async fn handle_webhook(
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let is_azure = env::var("AZURE_FUNCTIONS_ENVIRONMENT").is_ok();
+
+    // Initialize telemetry
+    if is_azure {
+        telemetry::init_azure_telemetry().await?;
+    } else {
+        telemetry::init_local_telemetry()?;
+    }
+
+    info!("Starting GitHub bot application");
+
     let config_values = if is_azure {
         get_azure_config().await?
     } else {
