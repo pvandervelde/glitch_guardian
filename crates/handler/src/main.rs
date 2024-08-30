@@ -21,7 +21,7 @@ use octocrab::{models::AppId, Octocrab};
 use serde::Deserialize;
 use sha2::Sha256;
 use std::{env, sync::Arc};
-use tracing::info;
+use tracing::{info, instrument};
 
 struct AppConfig {
     app_id: u64,
@@ -56,6 +56,10 @@ async fn get_azure_config() -> Result<AppConfig, Error> {
     let key_vault_name = env::var("KEY_VAULT_NAME")?;
     let key_vault_url = format!("https://{}.vault.azure.net", key_vault_name);
 
+    info!(
+        "Fetching configuration from Azure Key Vault at: {}",
+        key_vault_url.as_str()
+    );
     let app_id = get_secret_from_keyvault(key_vault_url.as_str(), "GithubAppId").await?;
     let app_private_key =
         get_secret_from_keyvault(key_vault_url.as_str(), "GithubAppPrivateKey").await?;
@@ -110,6 +114,7 @@ async fn get_secret_from_keyvault(key_vault_url: &str, secret_name: &str) -> Res
     Ok(secret.value)
 }
 
+#[instrument(skip(state, headers, body))]
 async fn handle_webhook(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
@@ -148,11 +153,13 @@ async fn main() -> Result<(), Error> {
         telemetry::init_local_telemetry()?;
     }
 
-    info!("Starting GitHub bot application");
+    info!("Starting application");
 
     let config_values = if is_azure {
+        info!("Running in Azure. Loading Azure configs ...");
         get_azure_config().await?
     } else {
+        info!("Running in locally. Loading local configs ...");
         get_local_config()?
     };
 
@@ -170,14 +177,15 @@ async fn main() -> Result<(), Error> {
         .with_state(state);
 
     let addr = format!("0.0.0.0:{}", config_values.port_number);
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(addr.clone()).await.unwrap();
 
-    // println!("Listening on {}", addr);
+    info!("Listening on {}", addr);
     axum::serve(listener, app).await.unwrap();
 
     Ok(())
 }
 
+#[instrument]
 fn verify_github_signature(secret: &str, headers: &HeaderMap, body: &str) -> bool {
     let signature = match headers.get("X-Hub-Signature-256") {
         Some(value) => value.to_str().unwrap_or(""),

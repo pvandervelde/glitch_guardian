@@ -1,6 +1,8 @@
 use octocrab::Octocrab;
 use reqwest::StatusCode;
+use tracing::instrument;
 
+#[instrument(skip(octocrab))]
 pub(crate) async fn add_to_project(
     octocrab: &Octocrab,
     project_id: &str,
