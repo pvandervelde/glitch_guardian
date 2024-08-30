@@ -21,6 +21,7 @@ azure_identity = "0.20.0"
 azure_security_keyvault = "0.20.0"
 bytes = "1.7.1"
 dotenv = "0.15.0"
+graphql_client = "0.14.0"
 hex = "0.4.3"
 hmac = "0.12.1"
 jsonwebtoken = "9.3.0"
@@ -47,6 +48,7 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 openssl = { version = "0.10.62", features = ["vendored"] }
 
 [dev-dependencies]
+mockall = "0.13.0"
 mockito = "1.5.0"
 
 # The build target for the azure functions binary

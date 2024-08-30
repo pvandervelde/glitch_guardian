@@ -70,7 +70,8 @@ pub async fn init_azure_telemetry() -> Result<(), Error> {
 pub fn init_local_telemetry() -> Result<(), Error> {
     // Set up console subscriber for local development
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
+        .with_max_level(tracing::Level::TRACE)
+        .with_target(false)
         .init();
 
     Ok(())

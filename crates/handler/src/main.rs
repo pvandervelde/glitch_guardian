@@ -5,8 +5,11 @@ mod telemetry;
 #[path = "main_tests.rs"]
 mod main_tests;
 
-use anyhow::Error;
-use api::{issues::Issue, projects::add_to_project, prs::PullRequest};
+use anyhow::{anyhow, Error};
+use api::{
+    installations::Installation, issues::Issue, projects::add_to_project, prs::PullRequest,
+    repositories::Repository,
+};
 use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
@@ -17,11 +20,15 @@ use azure_security_keyvault::KeyvaultClient;
 use dotenv::dotenv;
 use hmac::{Hmac, Mac};
 use jsonwebtoken::EncodingKey;
-use octocrab::{models::AppId, Octocrab};
+use octocrab::{
+    models::{InstallationId, InstallationToken},
+    params::apps::CreateInstallationAccessToken,
+    Octocrab, Page,
+};
 use serde::Deserialize;
 use sha2::Sha256;
 use std::{env, sync::Arc};
-use tracing::{info, instrument};
+use tracing::{debug, info, instrument, warn};
 
 struct AppConfig {
     app_id: u64,
@@ -42,13 +49,77 @@ struct WebhookPayload {
     action: String,
     issue: Option<Issue>,
     pull_request: Option<PullRequest>,
+    repository: Option<Repository>,
+    installation: Option<Installation>,
+}
+
+async fn authenticate_with_access_token(
+    octocrab: &Octocrab,
+    installation_id: u64,
+    source_repository: &str,
+) -> Result<Octocrab, Error> {
+    // Get an access token for the specific app installation that sent the event
+    // First find all the installations and use those to grab the specific one that
+    // sent the event
+    let installations = octocrab
+        .apps()
+        .installations()
+        .send()
+        .await
+        .unwrap_or(Page::<octocrab::models::Installation>::default())
+        .take_items();
+
+    let repository_name = source_repository.to_string();
+    let id = InstallationId(installation_id);
+    let Some(installation_index) = installations.iter().position(|l| l.id == id) else {
+        return Err(anyhow!(
+            "Failed to find installation with id {}",
+            installation_id
+        ));
+    };
+
+    let installation = &installations[installation_index];
+    debug!(
+        "Creating access token for installation with id {}. Linked to repository at {}",
+        installation.id,
+        installation
+            .repositories_url
+            .clone()
+            .unwrap_or("".to_string())
+    );
+
+    let mut create_access_token = CreateInstallationAccessToken::default();
+    //create_access_token.repositories = vec![repository_name.clone()];
+
+    // Create an access token for the installation
+    let access: InstallationToken = octocrab
+        .post(
+            installations[installation_index]
+                .access_tokens_url
+                .as_ref()
+                .unwrap(),
+            Some(&create_access_token),
+        )
+        .await?;
+
+    // USe the API token
+    let api_with_token = octocrab::OctocrabBuilder::new()
+        .personal_token(access.token)
+        .build()
+        .unwrap();
+
+    Ok(api_with_token)
 }
 
 async fn create_github_app_client(app_id: u64, private_key: &str) -> Result<Octocrab, Error> {
-    let app_id_struct = AppId::from(app_id);
+    //let app_id_struct = AppId::from(app_id);
     let key = EncodingKey::from_rsa_pem(private_key.as_bytes())?;
 
-    let octocrab = Octocrab::builder().app(app_id_struct, key).build()?;
+    //let octocrab = Octocrab::builder().app(app_id_struct, key).build()?;
+
+    let token = octocrab::auth::create_jwt(app_id.into(), &key).unwrap();
+    let octocrab = Octocrab::builder().personal_token(token).build()?;
+
     Ok(octocrab)
 }
 
@@ -56,7 +127,7 @@ async fn get_azure_config() -> Result<AppConfig, Error> {
     let key_vault_name = env::var("KEY_VAULT_NAME")?;
     let key_vault_url = format!("https://{}.vault.azure.net", key_vault_name);
 
-    info!(
+    debug!(
         "Fetching configuration from Azure Key Vault at: {}",
         key_vault_url.as_str()
     );
@@ -120,20 +191,53 @@ async fn handle_webhook(
     headers: HeaderMap,
     body: String,
 ) -> Result<StatusCode, StatusCode> {
-    // Verify GitHub signature
+    info!("Received webhook call from Github");
+
     if !verify_github_signature(&state.webhook_secret, &headers, &body) {
+        warn!("Webhook did not have valid signature");
         return Err(StatusCode::UNAUTHORIZED);
     }
+
+    info!("Webhook has valid signature. Processing information ...");
 
     let payload: WebhookPayload =
         serde_json::from_str(&body).map_err(|_| StatusCode::BAD_REQUEST)?;
 
+    let Some(installation) = payload.installation else {
+        return Err(StatusCode::BAD_REQUEST);
+    };
+    let installation_id = installation.id;
+
+    let Some(repository) = payload.repository else {
+        return Err(StatusCode::BAD_REQUEST);
+    };
+
+    let api_with_pat =
+        match authenticate_with_access_token(&state.octocrab, installation_id, &repository.name)
+            .await
+        {
+            Ok(o) => o,
+            Err(_) => return Err(StatusCode::UNAUTHORIZED),
+        };
+
+    debug!("Github action is {}", payload.action.as_str());
     match payload.action.as_str() {
         "opened" => {
-            if let Some(issue) = payload.issue {
-                add_to_project(&state.octocrab, &state.project_id, issue.node_id).await?;
+            let response = if let Some(issue) = payload.issue {
+                debug!("Issue created with ID: {}", issue.node_id);
+                add_to_project(&api_with_pat, &state.project_id, issue.node_id).await
             } else if let Some(pr) = payload.pull_request {
-                add_to_project(&state.octocrab, &state.project_id, pr.node_id).await?;
+                debug!("PR created with ID: {}", pr.node_id);
+                add_to_project(&api_with_pat, &state.project_id, pr.node_id).await
+            } else {
+                Ok(())
+            };
+
+            if response.is_err() {
+                let err = response.err().unwrap();
+                warn!("Request to Github failed. Response was: {}", &err);
+
+                return Err(err);
             }
         }
         _ => return Ok(StatusCode::OK),
@@ -156,10 +260,10 @@ async fn main() -> Result<(), Error> {
     info!("Starting application");
 
     let config_values = if is_azure {
-        info!("Running in Azure. Loading Azure configs ...");
+        debug!("Running in Azure. Loading Azure configs ...");
         get_azure_config().await?
     } else {
-        info!("Running in locally. Loading local configs ...");
+        debug!("Running in local mode. Loading local configs ...");
         get_local_config()?
     };
 

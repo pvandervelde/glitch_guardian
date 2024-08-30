@@ -19,3 +19,4 @@ mutants.out/
 mutants.out.old/
 .env.test
 .env.production
+.env
