@@ -93,7 +93,7 @@ jobs:
           -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
           -var="github_project_id=${{ secrets.GH_PROJECT_ID }}" \
           -var="meta_git_sha=${{ github.sha }}" \
-          -var="meta_version=${{ env.MajorMinorPatch }}" \
+          -var="meta_version=${{ env.majorMinorPatch }}" \
           -var="github_webhook_secret=${{ secrets.GH_WEBHOOK_SECRET }}"
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
