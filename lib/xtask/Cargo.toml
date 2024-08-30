@@ -7,6 +7,6 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-anyhow = "1.0.86"
+anyhow = { workspace = true }
 handlebars = "6.0.0"
 tempfile = "3.12.0"
