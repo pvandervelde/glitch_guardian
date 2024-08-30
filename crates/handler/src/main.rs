@@ -6,8 +6,10 @@ use axum::{
     Router,
 };
 use azure_security_keyvault::KeyvaultClient;
+use dotenv::dotenv;
 use hmac::{Hmac, Mac};
-use octocrab::Octocrab;
+use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+use octocrab::{models::AppId, Octocrab};
 use serde::Deserialize;
 use sha2::Sha256;
 use std::{env, sync::Arc};
@@ -15,6 +17,14 @@ use std::{env, sync::Arc};
 #[cfg(test)]
 #[path = "main_tests.rs"]
 mod main_tests;
+
+struct AppConfig {
+    app_id: u64,
+    app_private_key: String,
+    project_id: String,
+    webhook_secret: String,
+    port_number: u16,
+}
 
 struct AppState {
     octocrab: Octocrab,
@@ -65,9 +75,67 @@ async fn add_to_project(
     Ok(())
 }
 
+async fn create_github_app_client(app_id: u64, private_key: &str) -> Result<Octocrab, Error> {
+    let app_id_struct = AppId::from(app_id);
+    let key = EncodingKey::from_rsa_pem(private_key.as_bytes())?;
+
+    let octocrab = Octocrab::builder().app(app_id_struct, key).build()?;
+    Ok(octocrab)
+}
+
+async fn get_azure_config() -> Result<AppConfig, Error> {
+    let key_vault_name = env::var("KEY_VAULT_NAME")?;
+    let key_vault_url = format!("https://{}.vault.azure.net", key_vault_name);
+
+    let app_id = get_secret_from_keyvault(key_vault_url.as_str(), "GithubAppId").await?;
+    let app_private_key =
+        get_secret_from_keyvault(key_vault_url.as_str(), "GithubAppPrivateKey").await?;
+
+    let project_id = get_secret_from_keyvault(key_vault_url.as_str(), "GithubProjectId").await?;
+    let webhook_secret =
+        get_secret_from_keyvault(key_vault_url.as_str(), "GithubWebhookSecret").await?;
+
+    let port_key = "FUNCTIONS_CUSTOMHANDLER_PORT";
+    let port: u16 = match env::var(port_key) {
+        Ok(val) => val.parse().expect("Custom Handler port is not a number!"),
+        Err(_) => 3000,
+    };
+
+    let app_id_to_number = app_id.parse::<u64>()?;
+    let config = AppConfig {
+        app_id: app_id_to_number,
+        app_private_key,
+        project_id,
+        webhook_secret,
+        port_number: port,
+    };
+
+    Ok(config)
+}
+
+fn get_local_config() -> Result<AppConfig, Error> {
+    dotenv().ok();
+
+    let app_id = env::var("GITHUB_APP_ID")?;
+    let app_private_key = env::var("GITHUB_APP_PRIVATE_KEY")?;
+    let project_id = env::var("GITHUB_PROJECT_ID")?;
+    let webhook_secret = env::var("GITHUB_WEBHOOK_SECRET")?;
+
+    let app_id_to_number = app_id.parse::<u64>()?;
+    let config = AppConfig {
+        app_id: app_id_to_number,
+        app_private_key,
+        project_id,
+        webhook_secret,
+        port_number: 3000,
+    };
+
+    Ok(config)
+}
+
 async fn get_secret_from_keyvault(key_vault_url: &str, secret_name: &str) -> Result<String, Error> {
     let credential = azure_identity::create_credential()?;
-    let client = KeyvaultClient::new(&key_vault_url, credential)?;
+    let client = KeyvaultClient::new(key_vault_url, credential)?;
 
     let secret = client.secret_client().get(secret_name).await?;
     Ok(secret.value)
@@ -102,28 +170,27 @@ async fn handle_webhook(
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let key_vault_name = env::var("KEY_VAULT_NAME")?;
-    let key_vault_url = format!("https://{}.vault.azure.net", key_vault_name);
+    let is_azure = env::var("AZURE_FUNCTIONS_ENVIRONMENT").is_ok();
+    let config_values = if is_azure {
+        get_azure_config().await?
+    } else {
+        get_local_config()?
+    };
 
-    let github_token = get_secret_from_keyvault(key_vault_url.as_str(), "GITHUB-TOKEN").await?;
-    let project_id = get_secret_from_keyvault(key_vault_url.as_str(), "GITHUB-PROJECT-ID").await?;
-    let webhook_secret =
-        get_secret_from_keyvault(key_vault_url.as_str(), "GITHUB-WEBHOOK-SECRET").await?;
-
-    let octocrab = Octocrab::builder().personal_token(github_token).build()?;
+    let octocrab =
+        create_github_app_client(config_values.app_id, &config_values.app_private_key).await?;
 
     let state = Arc::new(AppState {
         octocrab,
-        project_id,
-        webhook_secret,
+        project_id: config_values.project_id,
+        webhook_secret: config_values.webhook_secret,
     });
 
     let app = Router::new()
         .route("/webhook", post(handle_webhook))
         .with_state(state);
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
-    let addr = format!("0.0.0.0:{}", port);
+    let addr = format!("0.0.0.0:{}", config_values.port_number);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 
     // println!("Listening on {}", addr);

@@ -23,72 +23,72 @@ provider "azurerm" {
 #
 
 locals {
-    location_map = {
-        australiacentral = "auc",
-        australiacentral2 = "auc2",
-        australiaeast = "aue",
-        australiasoutheast = "ause",
-        brazilsouth = "brs",
-        canadacentral = "cac",
-        canadaeast = "cae",
-        centralindia = "inc",
-        centralus = "usc",
-        eastasia = "ase",
-        eastus = "use",
-        eastus2 = "use2",
-        francecentral = "frc",
-        francesouth = "frs",
-        germanynorth = "den",
-        germanywestcentral = "dewc",
-        japaneast = "jpe",
-        japanwest = "jpw",
-        koreacentral = "krc",
-        koreasouth = "kre",
-        northcentralus = "usnc",
-        northeurope = "eun",
-        norwayeast = "noe",
-        norwaywest = "now",
-        southafricanorth = "zan",
-        southafricawest = "zaw",
-        southcentralus = "ussc",
-        southeastasia = "asse",
-        southindia = "ins",
-        switzerlandnorth = "chn",
-        switzerlandwest = "chw",
-        uaecentral = "aec",
-        uaenorth = "aen",
-        uksouth = "uks",
-        ukwest = "ukw",
-        westcentralus = "uswc",
-        westeurope = "euw",
-        westindia = "inw",
-        westus = "usw",
-        westus2 = "usw2",
-    }
+  location_map = {
+    australiacentral   = "auc",
+    australiacentral2  = "auc2",
+    australiaeast      = "aue",
+    australiasoutheast = "ause",
+    brazilsouth        = "brs",
+    canadacentral      = "cac",
+    canadaeast         = "cae",
+    centralindia       = "inc",
+    centralus          = "usc",
+    eastasia           = "ase",
+    eastus             = "use",
+    eastus2            = "use2",
+    francecentral      = "frc",
+    francesouth        = "frs",
+    germanynorth       = "den",
+    germanywestcentral = "dewc",
+    japaneast          = "jpe",
+    japanwest          = "jpw",
+    koreacentral       = "krc",
+    koreasouth         = "kre",
+    northcentralus     = "usnc",
+    northeurope        = "eun",
+    norwayeast         = "noe",
+    norwaywest         = "now",
+    southafricanorth   = "zan",
+    southafricawest    = "zaw",
+    southcentralus     = "ussc",
+    southeastasia      = "asse",
+    southindia         = "ins",
+    switzerlandnorth   = "chn",
+    switzerlandwest    = "chw",
+    uaecentral         = "aec",
+    uaenorth           = "aen",
+    uksouth            = "uks",
+    ukwest             = "ukw",
+    westcentralus      = "uswc",
+    westeurope         = "euw",
+    westindia          = "inw",
+    westus             = "usw",
+    westus2            = "usw2",
+  }
 }
 
 locals {
-    environment_short = substr(var.environment, 0, 1)
-    location_short = lookup(local.location_map, var.location, "aue")
+  environment_short = substr(var.environment, 0, 1)
+  location_short    = lookup(local.location_map, var.location, "aue")
 }
 
 # Name prefixes
 locals {
-    name_prefix = "${local.environment_short}-${local.location_short}"
-    name_prefix_tf = "${local.name_prefix}-tf-${var.category}"
+  name_prefix    = "${local.environment_short}-${local.location_short}"
+  name_prefix_tf = "${local.name_prefix}-tf-${var.category}"
 }
 
 locals {
-    common_tags = {
-        category    = "${var.category}"
-        environment = "${var.environment}"
-        location    = "${var.location}"
-        git_sha  = "${var.meta_git_sha}"
-        version = "${var.meta_version}"
-    }
+  common_tags = {
+    category    = "${var.category}"
+    environment = "${var.environment}"
+    location    = "${var.location}"
+    git_sha     = "${var.meta_git_sha}"
+    version     = "${var.meta_version}"
+  }
 
-    extra_tags = {
-    }
+  extra_tags = {
+  }
 }
 
 #
@@ -96,13 +96,13 @@ locals {
 #
 
 data "http" "github_meta" {
-    url = "https://api.github.com/meta"
+  url = "https://api.github.com/meta"
 }
 
 data "azurerm_client_config" "current" {}
 
 locals {
-    github_hook_ips = jsondecode(data.http.github_meta.response_body).hooks
+  github_hook_ips = jsondecode(data.http.github_meta.response_body).hooks
 }
 
 #
@@ -110,7 +110,7 @@ locals {
 #
 
 resource "azurerm_resource_group" "rg" {
-  location = "${var.location}"
+  location = var.location
   name     = "${local.name_prefix_tf}-rg"
 
   tags = merge(
@@ -118,8 +118,8 @@ resource "azurerm_resource_group" "rg" {
     local.extra_tags,
     var.tags,
     {
-        "purpose" = "${var.category}"
-    } )
+      "purpose" = "${var.category}"
+  })
 }
 
 #
@@ -138,8 +138,8 @@ resource "azurerm_storage_account" "sa" {
     local.extra_tags,
     var.tags,
     {
-        "purpose" = "${var.category}"
-    } )
+      "purpose" = "${var.category}"
+  })
 }
 
 #
@@ -147,56 +147,68 @@ resource "azurerm_storage_account" "sa" {
 #
 
 resource "azurerm_key_vault" "kv" {
-    name = "${local.environment_short}${local.location_short}${var.category}"
-    location = azurerm_resource_group.rg.location
-    resource_group_name = azurerm_resource_group.rg.name
-    enabled_for_disk_encryption = true
+  name                        = "${local.environment_short}${local.location_short}${var.category}"
+  location                    = azurerm_resource_group.rg.location
+  resource_group_name         = azurerm_resource_group.rg.name
+  enabled_for_disk_encryption = true
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+
+  sku_name = "standard"
+
+  access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
-    soft_delete_retention_days = 7
-    purge_protection_enabled = false
+    object_id = data.azurerm_client_config.current.object_id
 
-    sku_name = "standard"
+    key_permissions = [
+      "Get",
+    ]
 
-    access_policy {
-        tenant_id = data.azurerm_client_config.current.tenant_id
-        object_id = data.azurerm_client_config.current.object_id
+    secret_permissions = [
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+      "Purge",
+    ]
 
-        key_permissions = [
-            "Get",
-        ]
+    storage_permissions = [
+      "Get",
+    ]
+  }
 
-        secret_permissions = [
-            "Get",
-            "List",
-            "Set",
-            "Delete",
-            "Purge",
-        ]
-
-        storage_permissions = [
-            "Get",
-        ]
-    }
-
-    tags = merge(
-        local.common_tags,
-        local.extra_tags,
-        var.tags,
-        {
-            "purpose" = "${var.category}"
-        } )
+  tags = merge(
+    local.common_tags,
+    local.extra_tags,
+    var.tags,
+    {
+      "purpose" = "${var.category}"
+  })
 }
 
-resource "azurerm_key_vault_secret" "github_token" {
-    name = "GithubToken"
-    value = var.github_token
-    key_vault_id = azurerm_key_vault.kv.id
+resource "azurerm_key_vault_secret" "github_app_id" {
+  name         = "GithubAppId"
+  value        = var.github_app_id
+  key_vault_id = azurerm_key_vault.kv.id
+}
+
+resource "azurerm_key_vault_secret" "github_app_private_key" {
+  name         = "GithubAppPrivateKey"
+  value        = var.github_app_private_key
+  key_vault_id = azurerm_key_vault.kv.id
 }
 
 resource "azurerm_key_vault_secret" "github_webhook_secret" {
-    name = "GithubWebhookSecret"
-    value = var.github_webhook_secret
-    key_vault_id = azurerm_key_vault.kv.id
+  name         = "GithubWebhookSecret"
+  value        = var.github_webhook_secret
+  key_vault_id = azurerm_key_vault.kv.id
+}
+
+resource "azurerm_key_vault_secret" "github_project_id" {
+  name         = "GithubProjectId"
+  value        = var.github_project_id
+  key_vault_id = azurerm_key_vault.kv.id
 }
 
 #
@@ -230,13 +242,13 @@ resource "azurerm_service_plan" "asp" {
   tags = merge(
     local.common_tags,
     local.extra_tags,
-    var.tags)
+  var.tags)
 }
 
 resource "azurerm_linux_function_app" "fa" {
-  name                       = "${local.name_prefix}-tf-${var.category}-function"
-  location                   = azurerm_resource_group.rg.location
-  resource_group_name        = azurerm_resource_group.rg.name
+  name                = "${local.name_prefix}-tf-${var.category}-function"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   service_plan_id            = azurerm_service_plan.asp.id
   storage_account_name       = azurerm_storage_account.sa.name
@@ -247,10 +259,9 @@ resource "azurerm_linux_function_app" "fa" {
   }
 
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = "custom"
-    "GITHUB_TOKEN"             = var.github_token
-    PROJECT_ID                 = var.github_project_id
-    "APPINSIGHTS_INSTRUMENTATIONKEY"  = azurerm_application_insights.appinsights.instrumentation_key
+    "FUNCTIONS_WORKER_RUNTIME"              = "custom"
+    "KEY_VAULT_NAME"                        = azurerm_key_vault.kv.name
+    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.appinsights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.appinsights.connection_string
   }
 
@@ -280,15 +291,15 @@ resource "azurerm_linux_function_app" "fa" {
   tags = merge(
     local.common_tags,
     local.extra_tags,
-    var.tags)
+  var.tags)
 }
 
 resource "azurerm_key_vault_access_policy" "function_app" {
-    key_vault_id = azurerm_key_vault.kv.id
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = azurerm_linux_function_app.fa.identity[0].principal_id
+  key_vault_id = azurerm_key_vault.kv.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_linux_function_app.fa.identity[0].principal_id
 
-    secret_permissions = [
-        "Get",
-    ]
+  secret_permissions = [
+    "Get",
+  ]
 }

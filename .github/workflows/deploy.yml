@@ -90,11 +90,12 @@ jobs:
       working-directory: env
       run: |
         terraform apply -auto-approve \
-          -var="github_token=${{ secrets.GITHUB_TOKEN }}" \
+          -var="github_app_id=${{ secrets.GH_APP_ID }}" \
+          -var="github_app_private_key=${{ secrets.GH_APP_PRIVATE_KEY }}" \
           -var="github_project_id=${{ secrets.GH_PROJECT_ID }}" \
+          -var="github_webhook_secret=${{ secrets.GH_WEBHOOK_SECRET }}" \
           -var="meta_git_sha=${{ github.sha }}" \
-          -var="meta_version=${{ env.majorMinorPatch }}" \
-          -var="github_webhook_secret=${{ secrets.GH_WEBHOOK_SECRET }}"
+          -var="meta_version=${{ env.majorMinorPatch }}"
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
