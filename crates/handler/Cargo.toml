@@ -24,13 +24,22 @@ dotenv = "0.15.0"
 hex = "0.4.3"
 hmac = "0.12.1"
 jsonwebtoken = "9.3.0"
-octocrab = "0.39.0"
+octocrab = { version = "0.39.0", features = ["rustls"] }
+opentelemetry = "0.24.0"
+opentelemetry-application-insights = "0.34.0"
+opentelemetry-http = { version = "0.13.0", features = ["reqwest"] }
+opentelemetry-otlp = { version = "0.17.0", features = ["http-proto", "reqwest-client"] }
+opentelemetry-semantic-conventions = "0.16.0"
+opentelemetry_sdk = { version = "0.24.1", features = ["rt-tokio"] }
 reqwest = "0.12.5"
 ring = "0.17.8"
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.122"
 sha2 = "0.10.8"
 tokio = { version = "1.39.2", features = ["full"] }
+tracing = "0.1.40"
+tracing-opentelemetry = "0.25.0"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 
 # See https://github.com/sfackler/rust-openssl/issues/1627
 # and https://docs.rs/openssl/latest/openssl/#vendored
