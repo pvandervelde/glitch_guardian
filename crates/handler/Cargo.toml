@@ -18,7 +18,7 @@ version.workspace = true
 azure_identity = "0.20.0"
 azure_security_keyvault = "0.20.0"
 hex = "0.4.3"
-octocrab = "0.39.0"
+octocrab = "0.42.0"
 ring = "0.17.8"
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.122"
