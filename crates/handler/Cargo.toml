@@ -16,7 +16,7 @@ version.workspace = true
 
 [dependencies]
 azure_identity = "0.20.0"
-azure_security_keyvault = "0.20.0"
+azure_security_keyvault = "0.21.0"
 hex = "0.4.3"
 octocrab = "0.39.0"
 ring = "0.17.8"
