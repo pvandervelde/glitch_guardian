@@ -39,7 +39,7 @@ jobs:
           profile: minimal
           override: true
           components: rustfmt
-      - uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84 # v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
       - name: Check formatting
         run: cargo fmt --all -- --check
 
