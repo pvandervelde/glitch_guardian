@@ -105,7 +105,7 @@ jobs:
           toolchain: stable
 
       - name: Install cargo binstall
-        uses: cargo-bins/cargo-binstall@main
+        uses: cargo-bins/cargo-binstall@81df5c23b0dc775b009efdfc9895c5965b7a4e40 # main
 
       - name: Install cross
         run: cargo binstall cross --no-confirm --no-track
